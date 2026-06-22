@@ -76,6 +76,7 @@
   .card:hover{border-color:var(--coral);transform:translateY(-1px);box-shadow:0 6px 16px rgba(232,131,107,.14)}
   .card .top{display:flex;align-items:center;gap:8px}
   .dot{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:0 0 0 3px rgba(75,58,51,.06)}
+  .card .cthumb{width:42px;height:42px;border-radius:8px;object-fit:cover;flex:none;border:1px solid var(--line)}
   .card .name{font-weight:700;font-size:14px;flex:1}
   .card .meta{color:var(--muted);font-size:11.5px;margin-top:4px;line-height:1.5}
   .card .badge{font-size:9.5px;padding:2px 7px;border-radius:20px;font-weight:700;letter-spacing:.4px}
@@ -224,6 +225,11 @@
         <textarea id="f-note" placeholder="e.g. 2,865 m · the dinosaur spine · trekked together Dec 2024"></textarea>
       </div>
       <div class="fld">
+        <label>🖼️ Thumbnail image (upload — shown on the pin & list)</label>
+        <input type="file" id="f-thumb" accept="image/*">
+        <div id="thumbStatus" class="hint">No image added.</div>
+      </div>
+      <div class="fld">
         <label>📷 Photos link (Google Photos album, Instagram, Drive…)</label>
         <input id="f-photos" placeholder="https://photos.app.goo.gl/…">
       </div>
@@ -327,6 +333,8 @@ function uid(){ return "p-"+Date.now()+"-"+Math.floor(Math.random()*9999); }
 /* ---------------- Map ---------------- */
 const map = L.map("map", {zoomControl:true, minZoom:2, worldCopyJump:true}).setView([16.2, 106.5], 6);
 
+const clean = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+  {attribution:"© OpenStreetMap © CARTO", subdomains:"abcd", maxZoom:20});
 const streets = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   {attribution:"© OpenStreetMap", maxZoom:19});
 const terrain = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
@@ -334,8 +342,8 @@ const terrain = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
 const satellite = L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   {attribution:"© Esri World Imagery", maxZoom:19});
-terrain.addTo(map);
-L.control.layers({"🗺️ Streets":streets, "⛰️ Terrain":terrain, "🛰️ Satellite":satellite}, null,
+clean.addTo(map);   // default — light, clean basemap
+L.control.layers({"🗺️ Map":clean, "🛣️ Streets":streets, "⛰️ Terrain":terrain, "🛰️ Satellite":satellite}, null,
   {position:"topright"}).addTo(map);
 
 const cluster = L.markerClusterGroup({maxClusterRadius:38, spiderfyOnMaxZoom:true});
@@ -354,7 +362,8 @@ function popupHTML(p){
      ? `<span style="color:${CONQ_COLOR};font-weight:700">✓ Conquered</span>`
      : `<span style="color:${WISH_COLOR};font-weight:700">★ Want to go</span>`;
   const g = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`;
-  return `<div style="min-width:180px">
+  return `<div style="min-width:200px;max-width:240px">
+     ${p.thumb?`<img src="${p.thumb}" alt="" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:7px">`:""}
      <div style="font-weight:700;font-size:14px;margin-bottom:3px">${escapeHTML(p.name)}</div>
      <div style="font-size:11px;color:#8a7568;margin-bottom:5px">${CATS[p.cat].icon} ${CATS[p.cat].label} · ${badge}</div>
      ${p.note?`<div style="font-size:12px;line-height:1.5;margin-bottom:6px">${escapeHTML(p.note)}</div>`:""}
@@ -463,6 +472,7 @@ function cardEl(p){
   c.onclick=(e)=>{ if(e.target.classList.contains("mini"))return; flyTo(p); };
   c.innerHTML=`
     <div class="top">
+      ${p.thumb?`<img class="cthumb" src="${p.thumb}" alt="">`:""}
       <span class="dot" style="background:${col}"></span>
       <span class="name">${escapeHTML(p.name)}</span>
       <span class="badge ${p.status==='conquered'?'conq':'wish'}">${p.status==='conquered'?'✓':'★'}</span>
@@ -496,16 +506,20 @@ function openForm(id){
     document.getElementById("f-photos").value=p.photos||"";
     document.getElementById("f-gmaps").value="";
     document.getElementById("f-gpx").value="";
+    document.getElementById("f-thumb").value="";
     formRoute = p.route || null;
-    updateRouteStatus();
+    formThumb = p.thumb || null;
+    updateRouteStatus(); updateThumbStatus();
     del.style.display="inline-block";
   }else{
     document.getElementById("modalTitle").textContent="Add a place";
     ["f-id","f-name","f-lat","f-lng","f-note","f-gmaps","f-photos"].forEach(i=>document.getElementById(i).value="");
     document.getElementById("f-gpx").value="";
+    document.getElementById("f-thumb").value="";
     document.getElementById("f-cat").value="peak";
     document.getElementById("f-status").value="wish";
-    formRoute=null; updateRouteStatus();
+    formRoute=null; formThumb=null;
+    updateRouteStatus(); updateThumbStatus();
     del.style.display="none";
   }
 }
@@ -546,7 +560,8 @@ function savePlace(){
      status:document.getElementById("f-status").value,
      note:document.getElementById("f-note").value.trim(),
      photos:document.getElementById("f-photos").value.trim(),
-     route:formRoute || null };
+     route:formRoute || null,
+     thumb:formThumb || null };
   if(id){ Object.assign(getP(id), data); }
   else { places.push({id:uid(), ...data}); }
   save(); render(); closeForm();
@@ -589,6 +604,7 @@ function escapeHTML(s){ return (s||"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":
 
 /* ---------------- GPX route parsing ---------------- */
 let formRoute = null;
+let formThumb = null;
 
 function haversine(a,b){
   const R=6371000, toR=x=>x*Math.PI/180;
@@ -649,6 +665,41 @@ document.getElementById("f-gpx").addEventListener("change", ev=>{
     formRoute=route; updateRouteStatus();
   };
   r.readAsText(f);
+});
+
+/* ---------------- Thumbnail image upload ---------------- */
+function makeThumb(file, cb){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=480; let w=img.width, h=img.height;
+      if(w>=h && w>max){ h=Math.round(h*max/w); w=max; }
+      else if(h>w && h>max){ w=Math.round(w*max/h); h=max; }
+      const c=document.createElement("canvas"); c.width=w; c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      try{ cb(c.toDataURL("image/jpeg",0.72)); }catch(e){ cb(null); }
+    };
+    img.onerror=()=>cb(null);
+    img.src=reader.result;
+  };
+  reader.onerror=()=>cb(null);
+  reader.readAsDataURL(file);
+}
+function updateThumbStatus(){
+  const el=document.getElementById("thumbStatus"); if(!el) return;
+  if(formThumb){
+    el.innerHTML=`<img src="${formThumb}" alt="" style="height:56px;border-radius:8px;border:1px solid var(--line);vertical-align:middle;margin-right:8px"><a href="javascript:void(0)" onclick="clearThumb()" style="color:var(--coral);font-weight:600">✕ remove</a>`;
+  }else{ el.textContent="No image added."; }
+}
+function clearThumb(){ formThumb=null; const t=document.getElementById("f-thumb"); if(t) t.value=""; updateThumbStatus(); }
+
+document.getElementById("f-thumb").addEventListener("change", ev=>{
+  const f=ev.target.files[0]; if(!f) return;
+  makeThumb(f, d=>{
+    if(!d){ alert("Couldn't read this image. Try a JPG or PNG."); return; }
+    formThumb=d; updateThumbStatus();
+  });
 });
 
 /* ---------------- Go ---------------- */
