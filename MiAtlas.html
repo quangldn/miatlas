@@ -30,7 +30,7 @@
 
   /* ---------- Sidebar ---------- */
   #side{width:456px;min-width:456px;height:100%;background:linear-gradient(180deg,#FFFBF7,#FFEFE2);
-        border-right:1px solid var(--line);display:flex;flex-direction:column}
+        border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto}
   .brand{padding:20px 22px 16px;border-bottom:1px solid var(--line);
          background:linear-gradient(135deg,rgba(242,166,90,.16),rgba(232,131,107,.10))}
   .brand h1{margin:0;font-size:27px;letter-spacing:-.3px;font-weight:800}
@@ -58,6 +58,7 @@
   .btn.primary{background:linear-gradient(90deg,var(--peach),var(--coral));color:#fff;border:none;box-shadow:0 4px 12px rgba(232,131,107,.32)}
   .btn.primary:hover{filter:brightness(1.04);color:#fff}
 
+  .controls{position:sticky;top:0;z-index:5;background:#FFF6EC;box-shadow:0 4px 10px rgba(170,100,70,.05)}
   .filters{padding:10px 16px;border-bottom:1px solid var(--line)}
   .filters .row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
   .chip{cursor:pointer;font-size:11.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);
@@ -67,7 +68,7 @@
           color:var(--txt);padding:9px 12px;font-size:13px}
   .search::placeholder{color:var(--muted)}
 
-  #list{flex:1;overflow-y:auto;padding:8px 12px 24px}
+  #list{flex:1 0 auto;padding:8px 12px 24px}
   .group-title{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);
                margin:14px 8px 6px;display:flex;align-items:center;gap:8px}
   .group-title .ic{font-size:15px}
@@ -148,6 +149,7 @@
       <div class="ded">For you — from someone who once<br>stood on a few summits with you. 🌅</div>
     </div>
 
+    <div class="controls">
     <div class="toolbar">
       <button class="btn primary" onclick="openForm()">＋ Add a place</button>
       <button class="btn" onclick="exportData()">⭳ Export</button>
@@ -159,6 +161,7 @@
       <div class="row" id="catChips"></div>
       <div class="row" id="statChips"></div>
       <input class="search" id="search" placeholder="Search places…" oninput="render()">
+    </div>
     </div>
 
     <div id="list"></div>
