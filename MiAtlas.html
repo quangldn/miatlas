@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MiAtlas · A Vietnam Odyssey</title>
+
+<!-- Leaflet (interactive map: zoom, pan, layers) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<style>
+  /* ---------- Sunset Peach theme ---------- */
+  :root{
+    --bg:#FFF4EC; --bg2:#FBE8DA;
+    --panel:#FFFBF7; --panel2:#FCEADF; --line:#F0D6C3;
+    --txt:#4B3A33; --muted:#A98C7C;
+    --peach:#F2A65A; --coral:#E8836B; --lav:#B197C9;
+    --conq:#E8836B;  /* conquered = coral  */
+    --wish:#A98AC9;  /* want to go = lavender */
+    --shadow:0 12px 30px rgba(170,100,70,.16);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+            background:var(--bg);color:var(--txt)}
+  #app{display:flex;height:100vh;overflow:hidden}
+
+  /* ---------- Sidebar ---------- */
+  #side{width:456px;min-width:456px;height:100%;background:linear-gradient(180deg,#FFFBF7,#FFEFE2);
+        border-right:1px solid var(--line);display:flex;flex-direction:column}
+  .brand{padding:20px 22px 16px;border-bottom:1px solid var(--line);
+         background:linear-gradient(135deg,rgba(242,166,90,.16),rgba(232,131,107,.10))}
+  .brand h1{margin:0;font-size:27px;letter-spacing:-.3px;font-weight:800}
+  .brand h1 .vn{color:var(--coral)}
+  .brand h1 .globe{font-size:18px;font-weight:400;margin-left:6px;vertical-align:2px}
+  .brand p{margin:6px 0 0;color:var(--muted);font-size:12.5px;line-height:1.5}
+  .stats{display:flex;gap:10px;margin-top:14px}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:center;box-shadow:0 3px 10px rgba(170,100,70,.06)}
+  .stat b{display:block;font-size:20px}
+  .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .stat.conq b{color:var(--conq)} .stat.wish b{color:var(--wish)}
+
+  .quotebox{margin:14px 16px 2px;padding:14px 16px 13px;border-radius:14px;position:relative;
+            background:linear-gradient(135deg,rgba(242,166,90,.16),rgba(177,151,201,.14));
+            border:1px solid var(--line);border-left:3px solid var(--coral)}
+  .quotebox .mark{font-family:Georgia,serif;font-size:30px;line-height:0;color:var(--coral);opacity:.5;margin-right:4px;vertical-align:-10px}
+  .quotebox .q{font-size:13px;line-height:1.6;font-style:italic;color:var(--txt)}
+  .quotebox .by{display:block;margin-top:4px;font-size:11px;font-style:normal;color:var(--muted)}
+  .quotebox .ded{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);font-size:12px;color:var(--coral);text-align:right;font-weight:600}
+
+  .toolbar{padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+  .btn{cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--txt);
+       padding:8px 12px;border-radius:9px;font-size:12.5px;font-weight:600;transition:.15s}
+  .btn:hover{border-color:var(--coral);color:var(--coral)}
+  .btn.primary{background:linear-gradient(90deg,var(--peach),var(--coral));color:#fff;border:none;box-shadow:0 4px 12px rgba(232,131,107,.32)}
+  .btn.primary:hover{filter:brightness(1.04);color:#fff}
+
+  .filters{padding:10px 16px;border-bottom:1px solid var(--line)}
+  .filters .row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .chip{cursor:pointer;font-size:11.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);
+        background:transparent;color:var(--muted);user-select:none}
+  .chip.on{background:var(--panel2);color:var(--txt);border-color:var(--coral)}
+  .search{width:100%;margin-top:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;
+          color:var(--txt);padding:9px 12px;font-size:13px}
+  .search::placeholder{color:var(--muted)}
+
+  #list{flex:1;overflow-y:auto;padding:8px 12px 24px}
+  .group-title{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);
+               margin:14px 8px 6px;display:flex;align-items:center;gap:8px}
+  .group-title .ic{font-size:15px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;cursor:pointer;transition:.15s;box-shadow:0 2px 8px rgba(170,100,70,.05)}
+  .card:hover{border-color:var(--coral);transform:translateY(-1px);box-shadow:0 6px 16px rgba(232,131,107,.14)}
+  .card .top{display:flex;align-items:center;gap:8px}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:0 0 0 3px rgba(75,58,51,.06)}
+  .card .name{font-weight:700;font-size:14px;flex:1}
+  .card .meta{color:var(--muted);font-size:11.5px;margin-top:4px;line-height:1.5}
+  .card .badge{font-size:9.5px;padding:2px 7px;border-radius:20px;font-weight:700;letter-spacing:.4px}
+  .badge.conq{background:rgba(232,131,107,.18);color:var(--conq)}
+  .badge.wish{background:rgba(169,138,201,.20);color:var(--wish)}
+  .card .acts{display:flex;gap:6px;margin-top:8px}
+  .mini{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:7px;padding:3px 8px;cursor:pointer;background:transparent}
+  .mini:hover{color:var(--coral);border-color:var(--coral)}
+  .empty{color:var(--muted);text-align:center;padding:30px 16px;font-size:13px;line-height:1.6}
+
+  /* ---------- Map ---------- */
+  #mapwrap{flex:1;position:relative}
+  #map{position:absolute;inset:0;background:var(--bg2)}
+  .legend{position:absolute;left:14px;bottom:18px;z-index:600;background:rgba(255,251,247,.95);
+          border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:11.5px;box-shadow:var(--shadow);color:var(--txt)}
+  .legend b{font-size:11px;letter-spacing:.6px;color:var(--muted);text-transform:uppercase}
+  .legend .lr{display:flex;align-items:center;gap:8px;margin-top:7px}
+
+  /* marker pins */
+  .pin{font-size:18px;line-height:30px;width:30px;height:30px;text-align:center;border-radius:50% 50% 50% 0;
+       transform:rotate(-45deg);box-shadow:0 4px 10px rgba(120,70,50,.4);border:2px solid #fff}
+  .pin span{display:inline-block;transform:rotate(45deg)}
+
+  /* ---------- Modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(74,45,33,.45);backdrop-filter:blur(2px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+  .overlay.show{display:flex}
+  .modal{width:480px;max-width:100%;max-height:90vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);
+         border-radius:18px;box-shadow:var(--shadow)}
+  .modal h2{margin:0;padding:18px 22px;border-bottom:1px solid var(--line);font-size:17px}
+  .modal .body{padding:18px 22px}
+  .fld{margin-bottom:14px}
+  .fld label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  .fld input,.fld select,.fld textarea{width:100%;background:var(--panel2);border:1px solid var(--line);
+       border-radius:9px;color:var(--txt);padding:9px 11px;font-size:13.5px;font-family:inherit}
+  .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--coral)}
+  .fld textarea{min-height:64px;resize:vertical}
+  .hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .two{display:flex;gap:10px}.two>div{flex:1}
+  .modal .foot{padding:14px 22px 20px;display:flex;gap:10px;justify-content:flex-end}
+  .gmaps-box{display:flex;gap:8px}
+  .gmaps-box input{flex:1}
+
+  /* scrollbar */
+  #list::-webkit-scrollbar,.modal::-webkit-scrollbar{width:9px}
+  #list::-webkit-scrollbar-thumb,.modal::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px}
+
+  @media (max-width:820px){
+    #app{flex-direction:column}
+    #side{width:100%;min-width:0;height:46%}
+    #mapwrap{height:54%}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside id="side">
+    <div class="brand">
+      <h1><span class="vn">Mi</span>Atlas<span class="globe">🌏</span></h1>
+      <p>Every peak conquered, every hidden shore, every winding pass — my Vietnam, one pin at a time. 🌅</p>
+      <div class="stats">
+        <div class="stat conq"><b id="s-conq">0</b><span>Conquered</span></div>
+        <div class="stat wish"><b id="s-wish">0</b><span>Bucket&nbsp;list</span></div>
+        <div class="stat"><b id="s-total">0</b><span>Total spots</span></div>
+      </div>
+    </div>
+
+    <!-- 💛 Personal message — edit the quote and the dedication line below to make it yours -->
+    <div class="quotebox">
+      <div class="q"><span class="mark">“</span>Some roads take you somewhere; the best ones you walk just to stay a little longer in the world. Happiness was never a place on the map — it's the people who make it worth opening. Collect them like summits, and always take the long way.</div>
+      <div class="ded">For you — from someone who once<br>stood on a few summits with you. 🌅</div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn primary" onclick="openForm()">＋ Add a place</button>
+      <button class="btn" onclick="exportData()">⭳ Export</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">⭱ Import</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
+    </div>
+
+    <div class="filters">
+      <div class="row" id="catChips"></div>
+      <div class="row" id="statChips"></div>
+      <input class="search" id="search" placeholder="Search places…" oninput="render()">
+    </div>
+
+    <div id="list"></div>
+  </aside>
+
+  <!-- MAP -->
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div class="legend">
+      <b>Legend</b>
+      <div class="lr"><span class="dot" style="background:var(--conq)"></span> Conquered ✓</div>
+      <div class="lr"><span class="dot" style="background:var(--wish)"></span> Want to go ★</div>
+      <div class="lr" style="margin-top:9px;color:var(--muted)">⛰️ peak · 🏖️ sea · 🛵 loop/pass · ✨ highlight</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add a place</h2>
+    <div class="body">
+      <input type="hidden" id="f-id">
+      <div class="fld">
+        <label>Paste a Google Maps link or coordinates</label>
+        <div class="gmaps-box">
+          <input id="f-gmaps" placeholder="https://maps.google.com/…@21.40,104.32  ·  or  21.40, 104.32">
+          <button class="btn" type="button" onclick="parseGmaps()">Pin it</button>
+        </div>
+        <div class="hint">Open the place in Google Maps → copy the link or the coordinates → paste here → "Pin it". Lat/Long fill in automatically.</div>
+      </div>
+      <div class="fld">
+        <label>Place name</label>
+        <input id="f-name" placeholder="e.g. Đỉnh Fansipan">
+      </div>
+      <div class="two">
+        <div class="fld"><label>Latitude</label><input id="f-lat" placeholder="21.4087"></div>
+        <div class="fld"><label>Longitude</label><input id="f-lng" placeholder="104.3254"></div>
+      </div>
+      <div class="two">
+        <div class="fld">
+          <label>Category</label>
+          <select id="f-cat">
+            <option value="peak">⛰️ Peak / Mountain</option>
+            <option value="sea">🏖️ Sea / Beach / Island</option>
+            <option value="loop">🛵 Loop / Pass / Ride</option>
+            <option value="highlight">✨ Highlight / Other</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Status</label>
+          <select id="f-status">
+            <option value="wish">★ Want to go</option>
+            <option value="conquered">✓ Conquered</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld">
+        <label>Note (elevation, memory, tip…)</label>
+        <textarea id="f-note" placeholder="e.g. 2,865 m · the dinosaur spine · trekked together Dec 2024"></textarea>
+      </div>
+      <div class="fld">
+        <label>📷 Photos link (Google Photos album, Instagram, Drive…)</label>
+        <input id="f-photos" placeholder="https://photos.app.goo.gl/…">
+      </div>
+      <div class="fld">
+        <label>〰️ Route — attach a GPX file (e.g. Strava export)</label>
+        <input type="file" id="f-gpx" accept=".gpx,application/gpx+xml">
+        <div id="routeStatus" class="hint">No route attached.</div>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn" type="button" id="deleteBtn" onclick="deletePlace()" style="margin-right:auto;display:none">Delete</button>
+      <button class="btn" type="button" onclick="closeForm()">Cancel</button>
+      <button class="btn primary" type="button" onclick="savePlace()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   MiAtlas — a Vietnam (and beyond) map for the wanderer.
+   Data lives in your browser (localStorage). Export anytime
+   to back it up or move it to another computer.
+   ============================================================ */
+
+const STORE_KEY = "thuy-vietnam-odyssey-v1";
+
+const CATS = {
+  peak:      {label:"Peaks",            icon:"⛰️"},
+  sea:       {label:"Seas & Beaches",   icon:"🏖️"},
+  loop:      {label:"Loops & Passes",   icon:"🛵"},
+  highlight: {label:"Highlights",       icon:"✨"},
+};
+
+/* status colors (Sunset Peach) */
+const CONQ_COLOR = "#E8836B"; // coral
+const WISH_COLOR = "#A98AC9"; // lavender
+
+/* ---- Curated backpacker starter set (edit/delete freely) ---- */
+const DEFAULT_PLACES = [
+  // CONQUERED — the two trekked together
+  {name:"Tà Xùa (Sống lưng khủng long)", lat:21.4087, lng:104.3254, cat:"peak", status:"conquered", note:"2,865 m · the legendary dinosaur-spine ridge · trekked together 🤝"},
+  {name:"Nam Kang Hô Tao", lat:22.1500, lng:103.9670, cat:"peak", status:"conquered", note:"2,881 m · 'the Vietnamese Everest', one of the toughest treks · trekked together 🤝"},
+
+  // PEAKS — Vietnam's roof, the backpacker classics
+  {name:"Fansipan", lat:22.3036, lng:103.7756, cat:"peak", status:"wish", note:"3,143 m · the Roof of Indochina, Vietnam's highest"},
+  {name:"Pu Si Lung (Pusilung)", lat:22.6250, lng:102.7200, cat:"peak", status:"wish", note:"3,083 m · 2nd highest · remote border peak, multi-day"},
+  {name:"Putaleng", lat:22.4200, lng:103.6600, cat:"peak", status:"wish", note:"3,049 m · rhododendron forests in spring"},
+  {name:"Ky Quan San (Bạch Mộc Lương Tử)", lat:22.5500, lng:103.7300, cat:"peak", status:"wish", note:"3,046 m · famous 'heaven's gate' cloud sea"},
+  {name:"Khang Su Văn", lat:22.6000, lng:103.4000, cat:"peak", status:"wish", note:"3,012 m · Lai Châu border, French stele on summit"},
+  {name:"Tà Chì Nhù", lat:21.5700, lng:104.3000, cat:"peak", status:"wish", note:"2,979 m · purple Chi Pâu flower season (Oct)"},
+  {name:"Nhìu Cồ San", lat:22.4500, lng:103.6500, cat:"peak", status:"wish", note:"2,965 m · the 'waterfall in the clouds' trek"},
+  {name:"Lảo Thẩn", lat:22.5500, lng:103.8200, cat:"peak", status:"wish", note:"2,860 m · the 'lonely peak', best beginner cloud-hunt"},
+  {name:"Chiêu Lầu Thi", lat:22.6500, lng:104.8500, cat:"peak", status:"wish", note:"2,402 m · Hà Giang's shimmering cloud throne"},
+
+  // SEAS, BEACHES & ISLANDS — the hidden coast
+  {name:"Mũi Điện / Bãi Môn (Phú Yên)", lat:12.8800, lng:109.4600, cat:"sea", status:"wish", note:"Easternmost point of mainland Vietnam · first sunrise"},
+  {name:"Kỳ Co – Eo Gió (Quy Nhơn)", lat:13.6900, lng:109.3500, cat:"sea", status:"wish", note:"Turquoise coves & windy cliffs"},
+  {name:"Đảo Lý Sơn (Quảng Ngãi)", lat:15.3830, lng:109.1100, cat:"sea", status:"wish", note:"Volcanic island, garlic fields, Hang Câu"},
+  {name:"Cù Lao Chàm (Hội An)", lat:15.9500, lng:108.5200, cat:"sea", status:"wish", note:"Marine reserve, snorkelling, no plastic"},
+  {name:"Đảo Phú Quý (Bình Thuận)", lat:10.5300, lng:108.9300, cat:"sea", status:"wish", note:"Off-grid island, windmills & wild coves"},
+  {name:"Bình Ba & Bình Hưng (Khánh Hòa)", lat:11.8200, lng:109.2300, cat:"sea", status:"wish", note:"Lobster islands, clear water, backpacker fave"},
+  {name:"Quần đảo Nam Du (Kiên Giang)", lat:9.6800, lng:104.3600, cat:"sea", status:"wish", note:"21 islands, untouched fishing-village vibe"},
+  {name:"Bãi Đầm Trầu (Côn Đảo)", lat:8.6900, lng:106.6000, cat:"sea", status:"wish", note:"Wild beach below the runway, sea turtles"},
+  {name:"Đảo Cô Tô (Quảng Ninh)", lat:20.9800, lng:107.7700, cat:"sea", status:"wish", note:"Northern island, white sand & clear sea"},
+  {name:"Vịnh Lan Hạ (Cát Bà)", lat:20.7200, lng:107.0500, cat:"sea", status:"wish", note:"Quieter, wilder cousin of Hạ Long Bay"},
+
+  // LOOPS & PASSES — the great rides
+  {name:"Hà Giang Loop", lat:22.8230, lng:104.9840, cat:"loop", status:"wish", note:"The legendary 3–4 day northern motorbike loop"},
+  {name:"Đèo Mã Pí Lèng", lat:23.2200, lng:105.3400, cat:"loop", status:"wish", note:"'King of passes' above the Nho Quế river canyon"},
+  {name:"Đèo Ô Quy Hồ", lat:22.3500, lng:103.7700, cat:"loop", status:"wish", note:"Longest pass in VN, Sa Pa ↔ Lai Châu"},
+  {name:"Đèo Khau Phạ (Mù Cang Chải)", lat:21.7800, lng:104.1800, cat:"loop", status:"wish", note:"Pass over the golden rice terraces"},
+  {name:"Đèo Pha Đin", lat:21.5700, lng:103.2700, cat:"loop", status:"wish", note:"Sơn La ↔ Điện Biên, one of the 'four great passes'"},
+  {name:"Đèo Hải Vân", lat:16.2000, lng:108.1300, cat:"loop", status:"wish", note:"Ocean cliff pass, Huế ↔ Đà Nẵng"},
+  {name:"Cao Bằng Loop & Thác Bản Giốc", lat:22.8530, lng:106.7270, cat:"loop", status:"wish", note:"Northeast loop ending at the giant border waterfall"},
+
+  // HIGHLIGHTS — can't-miss
+  {name:"Ruộng bậc thang Mù Cang Chải", lat:21.8500, lng:104.0800, cat:"highlight", status:"wish", note:"Golden terraced rice fields (Sept–Oct)"},
+  {name:"Sa Pa", lat:22.3400, lng:103.8400, cat:"highlight", status:"wish", note:"Trekking hub of the northwest"},
+  {name:"Hang Sơn Đoòng / Phong Nha", lat:17.5000, lng:106.2800, cat:"highlight", status:"wish", note:"World's largest cave & karst wonderland"},
+  {name:"Cao nguyên đá Đồng Văn", lat:23.2780, lng:105.3620, cat:"highlight", status:"wish", note:"UNESCO Geopark on the Hà Giang loop"},
+  {name:"Ninh Bình (Tam Cốc – Tràng An)", lat:20.2200, lng:105.9100, cat:"highlight", status:"wish", note:"'Halong on land', river caves & karst"},
+];
+
+/* ---------------- State ---------------- */
+let places = load();
+let activeCats = new Set(Object.keys(CATS));
+let activeStatus = new Set(["conquered","wish"]);
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  const seeded = DEFAULT_PLACES.map((p,i)=>({id:"seed-"+i, ...p}));
+  localStorage.setItem(STORE_KEY, JSON.stringify(seeded));
+  return seeded;
+}
+function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(places)); }
+function uid(){ return "p-"+Date.now()+"-"+Math.floor(Math.random()*9999); }
+
+/* ---------------- Map ---------------- */
+const map = L.map("map", {zoomControl:true, minZoom:2, worldCopyJump:true}).setView([16.2, 106.5], 6);
+
+const streets = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {attribution:"© OpenStreetMap", maxZoom:19});
+const terrain = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+  {attribution:"© OpenTopoMap (CC-BY-SA)", maxZoom:17});
+const satellite = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  {attribution:"© Esri World Imagery", maxZoom:19});
+terrain.addTo(map);
+L.control.layers({"🗺️ Streets":streets, "⛰️ Terrain":terrain, "🛰️ Satellite":satellite}, null,
+  {position:"topright"}).addTo(map);
+
+const cluster = L.markerClusterGroup({maxClusterRadius:38, spiderfyOnMaxZoom:true});
+map.addLayer(cluster);
+let markerIndex = {}; // id -> marker
+
+function pinHTML(p){
+  const c = p.status==="conquered" ? CONQ_COLOR : WISH_COLOR;
+  return `<div class="pin" style="background:${c}"><span>${CATS[p.cat].icon}</span></div>`;
+}
+function makeIcon(p){
+  return L.divIcon({html:pinHTML(p), className:"", iconSize:[30,30], iconAnchor:[15,30], popupAnchor:[0,-30]});
+}
+function popupHTML(p){
+  const badge = p.status==="conquered"
+     ? `<span style="color:${CONQ_COLOR};font-weight:700">✓ Conquered</span>`
+     : `<span style="color:${WISH_COLOR};font-weight:700">★ Want to go</span>`;
+  const g = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`;
+  return `<div style="min-width:180px">
+     <div style="font-weight:700;font-size:14px;margin-bottom:3px">${escapeHTML(p.name)}</div>
+     <div style="font-size:11px;color:#8a7568;margin-bottom:5px">${CATS[p.cat].icon} ${CATS[p.cat].label} · ${badge}</div>
+     ${p.note?`<div style="font-size:12px;line-height:1.5;margin-bottom:6px">${escapeHTML(p.note)}</div>`:""}
+     ${p.route&&p.route.coords?`<div style="font-size:11.5px;color:#8a7568;margin-bottom:6px">〰️ Route: <b>${p.route.distanceKm} km</b>${p.route.elevGainM?` · +${p.route.elevGainM} m`:""}</div>`:""}
+     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+       ${p.photos?`<a href="${safeURL(p.photos)}" target="_blank" style="font-size:11px;color:#E8836B">📷 Photos ↗</a>`:""}
+       ${p.route&&p.route.coords?`<a href="javascript:void(0)" onclick="showRoute(getP('${p.id}'))" style="font-size:11px;color:#E8836B">〰️ Show route</a>`:""}
+     </div>
+     <div style="display:flex;gap:6px;margin-top:6px">
+       <a href="${g}" target="_blank" style="font-size:11px;color:#E8836B">Google Maps ↗</a>
+       <a href="javascript:void(0)" onclick="openForm('${p.id}')" style="font-size:11px;margin-left:auto;color:#E8836B">Edit</a>
+     </div>
+   </div>`;
+}
+function drawMarkers(visible){
+  cluster.clearLayers(); markerIndex={};
+  visible.forEach(p=>{
+    if(!isFinite(p.lat)||!isFinite(p.lng)) return;
+    const m = L.marker([p.lat,p.lng], {icon:makeIcon(p)}).bindPopup(popupHTML(p));
+    m.on("popupopen",()=>{ if(p.route&&p.route.coords) showRoute(p); });
+    cluster.addLayer(m); markerIndex[p.id]=m;
+  });
+}
+function flyTo(p){
+  if(!p) return;
+  const m = markerIndex[p.id];
+  if(p.route&&p.route.coords&&p.route.coords.length>1){
+    showRoute(p);
+    if(m){ setTimeout(()=>{ cluster.zoomToShowLayer(m, ()=>m.openPopup()); }, 600); }
+    return;
+  }
+  clearRoute();
+  map.flyTo([p.lat,p.lng], Math.max(map.getZoom(),11), {duration:.8});
+  if(m){ setTimeout(()=>{ cluster.zoomToShowLayer(m, ()=>m.openPopup()); }, 850); }
+}
+
+/* ---- route drawing (GPX) ---- */
+let routeLayer=null;
+function clearRoute(){ if(routeLayer){ map.removeLayer(routeLayer); routeLayer=null; } }
+function showRoute(p){
+  clearRoute();
+  if(!p||!p.route||!p.route.coords||p.route.coords.length<2) return;
+  routeLayer=L.layerGroup();
+  const line=L.polyline(p.route.coords,{color:"#E8836B",weight:4,opacity:.9});
+  routeLayer.addLayer(line);
+  const a=p.route.coords[0], b=p.route.coords[p.route.coords.length-1];
+  routeLayer.addLayer(L.circleMarker(a,{radius:5,color:"#2e9e5b",fillColor:"#2e9e5b",fillOpacity:1,weight:2}).bindTooltip("Start"));
+  routeLayer.addLayer(L.circleMarker(b,{radius:5,color:"#d64545",fillColor:"#d64545",fillOpacity:1,weight:2}).bindTooltip("End"));
+  routeLayer.addTo(map);
+  try{ map.fitBounds(line.getBounds(),{padding:[50,50]}); }catch(e){}
+}
+function safeURL(u){ u=(u||"").trim(); if(/^https?:\/\//i.test(u)) return u; return u?("https://"+u):""; }
+
+/* ---------------- Filters / chips ---------------- */
+function buildChips(){
+  const cc = document.getElementById("catChips");
+  cc.innerHTML="";
+  Object.entries(CATS).forEach(([k,v])=>{
+    const el=document.createElement("div");
+    el.className="chip on"; el.dataset.k=k;
+    el.textContent=`${v.icon} ${v.label}`;
+    el.onclick=()=>{ toggle(activeCats,k,el); render(); };
+    cc.appendChild(el);
+  });
+  const sc = document.getElementById("statChips");
+  sc.innerHTML="";
+  [["conquered","✓ Conquered"],["wish","★ Bucket list"]].forEach(([k,lbl])=>{
+    const el=document.createElement("div");
+    el.className="chip on"; el.dataset.k=k; el.textContent=lbl;
+    el.onclick=()=>{ toggle(activeStatus,k,el); render(); };
+    sc.appendChild(el);
+  });
+}
+function toggle(set,k,el){ if(set.has(k)){set.delete(k);el.classList.remove("on");} else {set.add(k);el.classList.add("on");} }
+
+/* ---------------- Render list + map ---------------- */
+function render(){
+  const q = (document.getElementById("search").value||"").toLowerCase().trim();
+  const visible = places.filter(p=>
+     activeCats.has(p.cat) && activeStatus.has(p.status) &&
+     (!q || p.name.toLowerCase().includes(q) || (p.note||"").toLowerCase().includes(q)));
+
+  drawMarkers(visible);
+
+  document.getElementById("s-conq").textContent  = places.filter(p=>p.status==="conquered").length;
+  document.getElementById("s-wish").textContent  = places.filter(p=>p.status==="wish").length;
+  document.getElementById("s-total").textContent = places.length;
+
+  const list = document.getElementById("list");
+  list.innerHTML="";
+  if(!visible.length){ list.innerHTML=`<div class="empty">No places match.<br>Try clearing a filter, or add a new spot with ＋.</div>`; return; }
+
+  Object.keys(CATS).forEach(cat=>{
+    const items = visible.filter(p=>p.cat===cat)
+      .sort((a,b)=> (a.status===b.status?0:a.status==="conquered"?-1:1) || a.name.localeCompare(b.name));
+    if(!items.length) return;
+    const gt=document.createElement("div"); gt.className="group-title";
+    gt.innerHTML=`<span class="ic">${CATS[cat].icon}</span> ${CATS[cat].label} <span style="color:var(--line)">·</span> ${items.length}`;
+    list.appendChild(gt);
+    items.forEach(p=>list.appendChild(cardEl(p)));
+  });
+}
+function cardEl(p){
+  const c=document.createElement("div"); c.className="card";
+  const col = p.status==="conquered"?"var(--conq)":"var(--wish)";
+  c.onclick=(e)=>{ if(e.target.classList.contains("mini"))return; flyTo(p); };
+  c.innerHTML=`
+    <div class="top">
+      <span class="dot" style="background:${col}"></span>
+      <span class="name">${escapeHTML(p.name)}</span>
+      <span class="badge ${p.status==='conquered'?'conq':'wish'}">${p.status==='conquered'?'✓':'★'}</span>
+    </div>
+    ${p.note?`<div class="meta">${escapeHTML(p.note)}</div>`:""}
+    ${(p.route&&p.route.coords)||p.photos?`<div class="meta">${p.route&&p.route.coords?`〰️ ${p.route.distanceKm} km`:""}${(p.route&&p.route.coords)&&p.photos?" · ":""}${p.photos?"📷 photos":""}</div>`:""}
+    <div class="acts">
+      <span class="mini" onclick="flyTo(getP('${p.id}'))">📍 Show</span>
+      <span class="mini" onclick="openForm('${p.id}')">✎ Edit</span>
+      <span class="mini" onclick="quickToggle('${p.id}')">${p.status==='conquered'?'↩ Move to wishlist':'✓ Mark conquered'}</span>
+    </div>`;
+  return c;
+}
+function getP(id){ return places.find(p=>p.id===id); }
+function quickToggle(id){ const p=getP(id); if(!p)return; p.status=p.status==="conquered"?"wish":"conquered"; save(); render(); }
+
+/* ---------------- Add / edit form ---------------- */
+function openForm(id){
+  const ov=document.getElementById("overlay"); ov.classList.add("show");
+  const del=document.getElementById("deleteBtn");
+  if(id){
+    const p=getP(id);
+    document.getElementById("modalTitle").textContent="Edit place";
+    document.getElementById("f-id").value=p.id;
+    document.getElementById("f-name").value=p.name;
+    document.getElementById("f-lat").value=p.lat;
+    document.getElementById("f-lng").value=p.lng;
+    document.getElementById("f-cat").value=p.cat;
+    document.getElementById("f-status").value=p.status;
+    document.getElementById("f-note").value=p.note||"";
+    document.getElementById("f-photos").value=p.photos||"";
+    document.getElementById("f-gmaps").value="";
+    document.getElementById("f-gpx").value="";
+    formRoute = p.route || null;
+    updateRouteStatus();
+    del.style.display="inline-block";
+  }else{
+    document.getElementById("modalTitle").textContent="Add a place";
+    ["f-id","f-name","f-lat","f-lng","f-note","f-gmaps","f-photos"].forEach(i=>document.getElementById(i).value="");
+    document.getElementById("f-gpx").value="";
+    document.getElementById("f-cat").value="peak";
+    document.getElementById("f-status").value="wish";
+    formRoute=null; updateRouteStatus();
+    del.style.display="none";
+  }
+}
+function closeForm(){ document.getElementById("overlay").classList.remove("show"); }
+
+function parseGmaps(){
+  const raw=(document.getElementById("f-gmaps").value||"").trim();
+  if(!raw){ alert("Paste a Google Maps link or coordinates first."); return; }
+  const c=extractCoords(raw);
+  if(c){ document.getElementById("f-lat").value=c.lat; document.getElementById("f-lng").value=c.lng; }
+  else { alert("Couldn't read coordinates.\n\nTip: in Google Maps, right-click the spot → click the lat,long numbers to copy them → paste here. Short 'maps.app.goo.gl' links don't contain coordinates, so open them first and copy the numbers."); }
+}
+function extractCoords(s){
+  let m=s.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+  if(m) return {lat:+m[1], lng:+m[2]};
+  m=s.match(/(?:[?&](?:q|query|ll|destination)=)(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+  if(m) return {lat:+m[1], lng:+m[2]};
+  m=s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if(m) return {lat:+m[1], lng:+m[2]};
+  m=s.match(/^\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/);
+  if(m) return {lat:+m[1], lng:+m[2]};
+  return null;
+}
+function savePlace(){
+  const name=document.getElementById("f-name").value.trim();
+  let lat=parseFloat(document.getElementById("f-lat").value);
+  let lng=parseFloat(document.getElementById("f-lng").value);
+  if((isNaN(lat)||isNaN(lng))){
+    const c=extractCoords(document.getElementById("f-gmaps").value||"");
+    if(c){lat=c.lat;lng=c.lng;}
+  }
+  if(!name){ alert("Please give the place a name."); return; }
+  if(isNaN(lat)||isNaN(lng)){ alert("Please add valid coordinates (use the Google Maps box + Pin it)."); return; }
+
+  const id=document.getElementById("f-id").value;
+  const data={ name, lat, lng,
+     cat:document.getElementById("f-cat").value,
+     status:document.getElementById("f-status").value,
+     note:document.getElementById("f-note").value.trim(),
+     photos:document.getElementById("f-photos").value.trim(),
+     route:formRoute || null };
+  if(id){ Object.assign(getP(id), data); }
+  else { places.push({id:uid(), ...data}); }
+  save(); render(); closeForm();
+  if(!id){ const np=places[places.length-1]; setTimeout(()=>flyTo(np),100); }
+}
+function deletePlace(){
+  const id=document.getElementById("f-id").value; if(!id)return;
+  if(!confirm("Delete this place?"))return;
+  places=places.filter(p=>p.id!==id); save(); render(); closeForm();
+}
+
+/* ---------------- Import / export ---------------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(places,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="miatlas-places.json"; a.click();
+}
+function importData(ev){
+  const file=ev.target.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      if(!Array.isArray(data)) throw 0;
+      data.forEach(p=>{ if(!p.id)p.id=uid(); });
+      if(confirm("Replace your current places with the imported file?\n(Cancel = merge / add them instead.)")){
+        places=data;
+      }else{
+        const have=new Set(places.map(p=>p.id));
+        data.forEach(p=>{ if(!have.has(p.id)) places.push(p); else p.id=uid(),places.push(p); });
+      }
+      save(); render();
+    }catch(e){ alert("That file doesn't look like a valid export."); }
+  };
+  r.readAsText(file); ev.target.value="";
+}
+
+function escapeHTML(s){ return (s||"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+/* ---------------- GPX route parsing ---------------- */
+let formRoute = null;
+
+function haversine(a,b){
+  const R=6371000, toR=x=>x*Math.PI/180;
+  const dLa=toR(b[0]-a[0]), dLo=toR(b[1]-a[1]);
+  const s=Math.sin(dLa/2)**2 + Math.cos(toR(a[0]))*Math.cos(toR(b[0]))*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function decimate(arr,max){
+  if(arr.length<=max) return arr;
+  const step=arr.length/max, out=[];
+  for(let i=0;i<arr.length;i+=step) out.push(arr[Math.floor(i)]);
+  const last=arr[arr.length-1];
+  if(out[out.length-1]!==last) out.push(last);
+  return out;
+}
+function parseGPX(text){
+  let xml;
+  try{ xml=new DOMParser().parseFromString(text,"application/xml"); }catch(e){ return null; }
+  if(xml.querySelector("parsererror")) return null;
+  let pts=[...xml.querySelectorAll("trkpt")];
+  if(!pts.length) pts=[...xml.querySelectorAll("rtept")];
+  if(!pts.length) pts=[...xml.querySelectorAll("wpt")];
+  const coords=[], eles=[];
+  pts.forEach(pt=>{
+    const la=parseFloat(pt.getAttribute("lat")), lo=parseFloat(pt.getAttribute("lon"));
+    if(isFinite(la)&&isFinite(lo)){
+      coords.push([la,lo]);
+      const e=pt.querySelector("ele");
+      eles.push(e?parseFloat(e.textContent):null);
+    }
+  });
+  if(coords.length<2) return null;
+  let dist=0, gain=0;
+  for(let i=1;i<coords.length;i++){
+    dist+=haversine(coords[i-1],coords[i]);
+    if(eles[i]!=null && eles[i-1]!=null){ const d=eles[i]-eles[i-1]; if(d>0) gain+=d; }
+  }
+  const simplified=decimate(coords,500);
+  return { coords:simplified, distanceKm:+(dist/1000).toFixed(2), elevGainM:Math.round(gain), n:simplified.length };
+}
+function updateRouteStatus(){
+  const el=document.getElementById("routeStatus");
+  if(!el) return;
+  if(formRoute){
+    el.innerHTML=`〰️ Route: <b>${formRoute.distanceKm} km</b>${formRoute.elevGainM?` · +${formRoute.elevGainM} m`:""} · ${formRoute.n} pts &nbsp;<a href="javascript:void(0)" onclick="clearFormRoute()" style="color:var(--coral);font-weight:600">✕ remove</a>`;
+  }else{
+    el.textContent="No route attached.";
+  }
+}
+function clearFormRoute(){ formRoute=null; const g=document.getElementById("f-gpx"); if(g) g.value=""; updateRouteStatus(); }
+
+document.getElementById("f-gpx").addEventListener("change", ev=>{
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    const route=parseGPX(r.result);
+    if(!route){ alert("Couldn't read this GPX file. Make sure it's a valid .gpx export."); return; }
+    formRoute=route; updateRouteStatus();
+  };
+  r.readAsText(f);
+});
+
+/* ---------------- Go ---------------- */
+buildChips();
+render();
+map.on("click", clearRoute);  // click empty map to hide a drawn route
+document.getElementById("f-gmaps").addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();parseGmaps();}});
+document.getElementById("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay")closeForm(); });
+</script>
+</body>
+</html>
