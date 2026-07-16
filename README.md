@@ -8,7 +8,7 @@ It's a single self-contained web page. No install, no account. Your data can liv
 
 ## ✨ Features
 
-- Interactive map (zoom, pan, Street / Terrain / Satellite layers), colored pins for *Conquered* vs *Want to go*, categories for peak / sea / loop / highlight.
+- Interactive map (zoom, pan, Street / Terrain / Satellite layers), colored pins for *Conquered* vs *Want to go*, and open-ended categories (peak / sea / loop / highlight — or add your own, even straight from the Sheet).
 - Add places from a Google Maps link or coordinates; upload a thumbnail; attach a GPX route.
 - **Detail** per place — a private space to write your impressions (up to 10,000 words), opened only when you click a place, with a "last edited" timestamp.
 - **Cloud sync (optional)** — link the app to a private Google Sheet so your map follows you across phone and computer. Auto-pushes every change; asks you only on a real conflict. You can even edit places straight in the Sheet.
@@ -22,9 +22,11 @@ It's a single self-contained web page. No install, no account. Your data can liv
 |------|------------|
 | `MiAtlas.html` | The app. **Rename to `index.html`** so GitHub Pages serves it at the site root. |
 | `MiAtlas-Sync.gs` | Google Apps Script that turns your private Google Sheet into the app's database (read + write). |
-| `MiAtlas-Database-Starter.xlsx` | A ready starter sheet with the 33 places. Upload to Drive → open as Google Sheets → edit directly if you like. |
+| `MiAtlas-Database-Starter.xlsx` | A ready starter sheet with the 33 places. Upload to Drive, then **File → Save as Google Sheets** (converting from .xlsx is required before Apps Script is available). Edit directly if you like. |
 | `MiAtlas-Sync-Huong-Dan.md` | **Full setup guide (Vietnamese)** — create the database, link the app, deploy to GitHub Pages. |
 | `README.txt` | Plain-text quick reference for using the map. |
+
+> `DEPLOY-GITHUB.txt` is an **older, superseded** note kept only for reference — follow `MiAtlas-Sync-Huong-Dan.md` instead. You can safely delete it.
 
 ---
 
