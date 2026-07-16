@@ -157,7 +157,7 @@
   <!-- SIDEBAR -->
   <aside id="side">
     <div class="brand">
-      <h1><span class="vn">Mi</span>Atlas</span></h1>
+      <h1><span class="vn">Mi</span>Atlas<span class="globe">🌏</span></h1>
       <p>Every peak conquered, every hidden shore, every winding pass — my Vietnam, one pin at a time. 🌅</p>
       <div class="stats">
         <div class="stat conq"><b id="s-conq">0</b><span>Conquered</span></div>
@@ -296,12 +296,8 @@
       <div class="two">
         <div class="fld">
           <label>Category</label>
-          <select id="f-cat">
-            <option value="peak">⛰️ Peak / Mountain</option>
-            <option value="sea">🏖️ Sea / Beach / Island</option>
-            <option value="loop">🛵 Loop / Pass / Ride</option>
-            <option value="highlight">✨ Highlight / Other</option>
-          </select>
+          <input id="f-cat" list="catList" placeholder="peak · sea · loop · highlight · or type a new one">
+          <datalist id="catList"></datalist>
         </div>
         <div class="fld">
           <label>Status</label>
@@ -353,6 +349,25 @@ const CATS = {
   loop:      {label:"Loops & Passes",   icon:"🛵"},
   highlight: {label:"Highlights",       icon:"✨"},
 };
+
+/* Categories are open-ended: any cat typed in the Sheet (or the Add form)
+   works. Unknown ones get a default pin icon and show up in the filters. */
+function catInfo(c){ return CATS[c] || {label:(c||"other"), icon:"📍"}; }
+function allCats(){
+  const s=Object.keys(CATS).slice();
+  places.forEach(p=>{ if(p.cat && s.indexOf(p.cat)<0) s.push(p.cat); });
+  return s;
+}
+let seenCats=[];                         // cats we've already shown a chip for
+function ensureCats(){
+  const cats=allCats();
+  cats.forEach(c=>{ if(!seenCats.includes(c) && !activeCats.has(c)) activeCats.add(c); }); // new cats visible by default
+  if(cats.join("|")!==seenCats.join("|")){ seenCats=cats; buildChips(); updateCatDatalist(); }
+}
+function updateCatDatalist(){
+  const dl=document.getElementById("catList"); if(!dl) return;
+  dl.innerHTML=allCats().map(c=>`<option value="${escapeHTML(c)}">`).join("");
+}
 
 /* status colors (Sunset Peach) */
 const CONQ_COLOR = "#E8836B"; // coral
@@ -444,7 +459,7 @@ let markerIndex = {}; // id -> marker
 
 function pinHTML(p){
   const c = p.status==="conquered" ? CONQ_COLOR : WISH_COLOR;
-  return `<div class="pin" style="background:${c}"><span>${CATS[p.cat].icon}</span></div>`;
+  return `<div class="pin" style="background:${c}"><span>${catInfo(p.cat).icon}</span></div>`;
 }
 function makeIcon(p){
   return L.divIcon({html:pinHTML(p), className:"", iconSize:[30,30], iconAnchor:[15,30], popupAnchor:[0,-30]});
@@ -457,7 +472,7 @@ function popupHTML(p){
   return `<div style="min-width:200px;max-width:240px">
      ${p.thumb?`<img src="${p.thumb}" alt="" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:7px">`:""}
      <div style="font-weight:700;font-size:14px;margin-bottom:3px">${escapeHTML(p.name)}</div>
-     <div style="font-size:11px;color:#8a7568;margin-bottom:5px">${CATS[p.cat].icon} ${CATS[p.cat].label} · ${badge}</div>
+     <div style="font-size:11px;color:#8a7568;margin-bottom:5px">${catInfo(p.cat).icon} ${escapeHTML(catInfo(p.cat).label)} · ${badge}</div>
      ${p.note?`<div style="font-size:12px;line-height:1.5;margin-bottom:6px">${escapeHTML(p.note)}</div>`:""}
      ${p.route&&p.route.coords?`<div style="font-size:11.5px;color:#8a7568;margin-bottom:6px">〰️ Route: <b>${p.route.distanceKm} km</b>${p.route.elevGainM?` · +${p.route.elevGainM} m`:""}</div>`:""}
      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -514,9 +529,10 @@ function safeURL(u){ u=(u||"").trim(); if(/^https?:\/\//i.test(u)) return u; ret
 function buildChips(){
   const cc = document.getElementById("catChips");
   cc.innerHTML="";
-  Object.entries(CATS).forEach(([k,v])=>{
+  allCats().forEach(k=>{
+    const v=catInfo(k);
     const el=document.createElement("div");
-    el.className="chip on"; el.dataset.k=k;
+    el.className=activeCats.has(k)?"chip on":"chip"; el.dataset.k=k;
     el.textContent=`${v.icon} ${v.label}`;
     el.onclick=()=>{ toggle(activeCats,k,el); render(); };
     cc.appendChild(el);
@@ -525,7 +541,7 @@ function buildChips(){
   sc.innerHTML="";
   [["conquered","✓ Conquered"],["wish","★ Bucket list"]].forEach(([k,lbl])=>{
     const el=document.createElement("div");
-    el.className="chip on"; el.dataset.k=k; el.textContent=lbl;
+    el.className=activeStatus.has(k)?"chip on":"chip"; el.dataset.k=k; el.textContent=lbl;
     el.onclick=()=>{ toggle(activeStatus,k,el); render(); };
     sc.appendChild(el);
   });
@@ -534,6 +550,7 @@ function toggle(set,k,el){ if(set.has(k)){set.delete(k);el.classList.remove("on"
 
 /* ---------------- Render list + map ---------------- */
 function render(){
+  ensureCats();   // pick up any new categories added via the Sheet / Add form
   const q = (document.getElementById("search").value||"").toLowerCase().trim();
   const visible = places.filter(p=>
      activeCats.has(p.cat) && activeStatus.has(p.status) &&
@@ -549,12 +566,12 @@ function render(){
   list.innerHTML="";
   if(!visible.length){ list.innerHTML=`<div class="empty">No places match.<br>Try clearing a filter, or add a new spot with ＋.</div>`; return; }
 
-  Object.keys(CATS).forEach(cat=>{
+  allCats().forEach(cat=>{
     const items = visible.filter(p=>p.cat===cat)
       .sort((a,b)=> (a.status===b.status?0:a.status==="conquered"?-1:1) || a.name.localeCompare(b.name));
     if(!items.length) return;
     const gt=document.createElement("div"); gt.className="group-title";
-    gt.innerHTML=`<span class="ic">${CATS[cat].icon}</span> ${CATS[cat].label} <span style="color:var(--line)">·</span> ${items.length}`;
+    gt.innerHTML=`<span class="ic">${catInfo(cat).icon}</span> ${escapeHTML(catInfo(cat).label)} <span style="color:var(--line)">·</span> ${items.length}`;
     list.appendChild(gt);
     items.forEach(p=>list.appendChild(cardEl(p)));
   });
@@ -596,7 +613,7 @@ function openDetail(id){
   const p=getP(id); if(!p) return;
   document.getElementById("d-id").value=p.id;
   document.getElementById("detailTitle").textContent=p.name;
-  document.getElementById("d-cat").textContent=`${CATS[p.cat].icon} ${CATS[p.cat].label}`;
+  document.getElementById("d-cat").textContent=`${catInfo(p.cat).icon} ${catInfo(p.cat).label}`;
   document.getElementById("d-time").textContent =
     p.detailEditedAt ? `Last edited ${fmtTime(p.detailEditedAt)}` : "Not written yet";
   const read=document.getElementById("d-read");
@@ -649,6 +666,7 @@ function saveDetail(){
 /* ---------------- Add / edit form ---------------- */
 function openForm(id){
   const ov=document.getElementById("overlay"); ov.classList.add("show");
+  updateCatDatalist();
   const del=document.getElementById("deleteBtn");
   if(id){
     const p=getP(id);
@@ -713,7 +731,7 @@ function savePlace(){
 
   const id=document.getElementById("f-id").value;
   const data={ name, lat, lng,
-     cat:document.getElementById("f-cat").value,
+     cat:(document.getElementById("f-cat").value||"").trim()||"highlight",
      status:document.getElementById("f-status").value,
      note:document.getElementById("f-note").value.trim(),
      photos:document.getElementById("f-photos").value.trim(),

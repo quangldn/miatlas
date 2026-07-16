@@ -125,7 +125,8 @@ Trang này công khai nhưng **vô hại**: chỉ là khung ứng dụng rỗng,
 
 Tab **`Places`** chính là dữ liệu. Bạn có thể mở Sheet và sửa thẳng:
 
-- **Thêm điểm mới**: thêm một hàng, điền `name`, `cat` (peak/sea/loop/highlight), `status` (wish/conquered), `lat`, `lng`, `note`. **Để trống cột `id`** — app sẽ tự sinh id.
+- **Thêm điểm mới**: thêm một hàng, điền `name`, `cat`, `status` (wish/conquered), `lat`, `lng`, `note`. **Để trống cột `id`** — app sẽ tự sinh id.
+- **Loại (`cat`) mở**: dùng 4 loại sẵn có (`peak`, `sea`, `loop`, `highlight`) hoặc **tự gõ loại mới** (ví dụ `food`, `waterfall`, `camp`…). Loại mới sẽ tự hiện trên app với biểu tượng 📍 và tự vào bộ lọc. Nhớ gõ **nhất quán một cách viết** cho cùng một loại (ví dụ luôn là `food`, đừng lúc `Food` lúc `food`).
 - **Sửa / xoá điểm**: sửa ô hoặc xoá cả hàng.
 - **Viết cảm nhận**: gõ vào cột `detail`.
 - Lần sau mở MiAtlas (hoặc mở lại), nó tự nhận thay đổi từ Sheet về.
