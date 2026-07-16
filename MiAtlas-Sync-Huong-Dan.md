@@ -12,14 +12,19 @@ Bạn chỉ cần làm **một lần** (khoảng 5 phút). Sau đó mọi thiế
 
 ## Phần A — Tạo "database" trên Google (làm 1 lần)
 
+> ⚠️ **Làm trên máy tính (trình duyệt), không làm trên điện thoại** — app Google Sheets trên điện thoại **không có** Apps Script. Xong bước cài đặt này rồi thì điện thoại chỉ việc mở MiAtlas dán link.
+
 **1. Tạo Google Sheet — dùng file mẫu có sẵn 33 điểm**
-- Cách nhanh (khuyến nghị): mở **`MiAtlas-Database-Starter.xlsx`** (mình gửi kèm, đã có sẵn 33 điểm) → tải lên Google Drive → chuột phải → **Open with → Google Sheets**. Có thể sửa các điểm ngay tại đây trước khi dùng.
-  - Quan trọng: giữ **tên tab là `Places`** và **giữ nguyên hàng tiêu đề** (id, name, cat, status, lat, lng, note, photos, detail, detailEditedAt).
-- Hoặc bắt đầu trống: vào https://sheets.new — không cần thêm gì, script sẽ tự tạo bảng `Places` và bơm 33 điểm mặc định vào lần sync đầu.
+- Cách nhanh (khuyến nghị): mở **`MiAtlas-Database-Starter.xlsx`** (mình gửi kèm) → tải lên Google Drive → nhấp đúp để mở.
+- **BẮT BUỘC — chuyển thành Google Sheet thật:** file `.xlsx` lúc này đang ở "chế độ Office", **KHÔNG có** Apps Script. Trong file vừa mở, vào **File → Save as Google Sheets** (Tệp → Lưu dưới dạng Google Trang tính). Google tạo một file mới (biểu tượng Sheets xanh lá, **không** còn đuôi `.xlsx`) — **dùng file mới này** cho các bước sau.
+  - Dấu hiệu đúng: trên thanh tiêu đề không thấy chữ ".XLSX", và menu có đủ **Extensions**.
+  - Có thể sửa các điểm ngay tại đây trước khi dùng. Giữ **tên tab là `Places`** và **giữ nguyên hàng tiêu đề** (id, name, cat, status, lat, lng, note, photos, detail, detailEditedAt).
+- Hoặc bắt đầu trống (khỏi cần chuyển đổi): vào https://sheets.new — đây đã là Google Sheet thật; script sẽ tự tạo bảng `Places` và bơm 33 điểm mặc định vào lần sync đầu.
 
 **2. Mở trình soạn Apps Script**
-- Trong Sheet: menu **Extensions → Apps Script** (Tiện ích mở rộng → Apps Script).
+- Trong Google Sheet: menu **Extensions → Apps Script** (Tiện ích mở rộng → Apps Script). **Lưu ý: KHÔNG nằm ở menu Tools/Công cụ** — Google đã chuyển sang **Extensions**.
 - Cửa sổ mới hiện ra, có sẵn 1 file `Code.gs` với hàm rỗng.
+- **Không thấy Apps Script?** Gần như chắc chắn file vẫn là `.xlsx` — quay lại bước 1 làm **File → Save as Google Sheets** trước đã. (Hoặc bạn đang mở trên điện thoại → chuyển sang máy tính.)
 
 **3. Dán code**
 - Xoá hết nội dung có sẵn trong `Code.gs`.
