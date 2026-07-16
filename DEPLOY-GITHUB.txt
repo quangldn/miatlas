@@ -1,0 +1,97 @@
+============================================================
+  ⚠️ FILE CŨ — ĐÃ CÓ BẢN MỚI HƠN
+  Hãy dùng "MiAtlas-Sync-Huong-Dan.md" (có cả deploy GitHub
+  Pages ở Phần C + đồng bộ đa thiết bị qua Google Sheet).
+  File này giữ lại chỉ để tham khảo giải pháp cũ (chỉ lưu
+  trong trình duyệt, KHÔNG đồng bộ).
+============================================================
+
+============================================================
+  MiAtlas — Deploy lên GitHub Pages (giải pháp tạm)
+  Không cần sửa code. Bản hiện tại chạy ngay.
+============================================================
+
+TÓM TẮT
+-------
+Đưa file MiAtlas.html lên GitHub → bật GitHub Pages → có 1 link
+web để mở mọi nơi. Dữ liệu (pin) lưu trong TRÌNH DUYỆT của máy
+đang dùng. Trên đúng máy + trình duyệt đó: sửa được, giữ được,
+và update version mới KHÔNG làm mất dữ liệu.
+
+
+BƯỚC 1 — Tạo tài khoản & repo
+-----------------------------
+1. Đăng ký / đăng nhập github.com (miễn phí).
+2. Bấm dấu "+" góc trên phải → "New repository".
+3. Đặt tên, ví dụ:  miatlas
+4. Chọn "Public".  (Lưu ý: public nghĩa là ai có link đều xem
+   được trang, kể cả lời nhắn cá nhân. Xem mục RIÊNG TƯ bên dưới.)
+5. Bấm "Create repository".
+
+
+BƯỚC 2 — Tải file lên (không cần cài git)
+-----------------------------------------
+1. Trong repo vừa tạo, bấm "Add file" → "Upload files".
+2. Kéo thả file  MiAtlas.html  vào.
+   (Có thể tải kèm README.txt, miatlas-places.json nếu muốn.)
+3. Bấm "Commit changes".
+
+MẸO — link gọn hơn:
+   Nếu đổi tên file thành  index.html  thì link sẽ là
+   ".../miatlas/" (không cần gõ tên file). Để nguyên MiAtlas.html
+   thì link là ".../miatlas/MiAtlas.html". Cái nào cũng được.
+
+
+BƯỚC 3 — Bật GitHub Pages
+-------------------------
+1. Vào repo → tab "Settings".
+2. Menu trái → "Pages".
+3. Mục "Source": chọn "Deploy from a branch".
+4. "Branch": chọn  main  /  (root)  → bấm "Save".
+5. Đợi ~1 phút. Trang sẽ hiện link dạng:
+      https://<tên-bạn>.github.io/miatlas/
+   (hoặc .../miatlas/MiAtlas.html nếu không đổi tên index.html)
+
+
+BƯỚC 4 — Dùng
+-------------
+- Mở link đó trên máy/trình duyệt của bạn.
+- Thêm/sửa/xóa pin như bình thường.
+- Dữ liệu tự lưu trong trình duyệt máy đó.
+
+
+CẬP NHẬT VERSION MỚI (update file)
+----------------------------------
+1. Vào repo → mở file MiAtlas.html → bấm biểu tượng bút chì (Edit)
+   HOẶC "Add file" → "Upload files" để đè bản mới.
+2. "Commit changes".
+3. Đợi ~1 phút, tải lại trang.
+   → Dữ liệu pin KHÔNG bị reset (cùng link + cùng khóa lưu).
+
+
+⚠️ NHỮNG ĐIỀU CẦN NHỚ (vì đây là giải pháp TẠM)
+-----------------------------------------------
+• Dữ liệu nằm trong TRÌNH DUYỆT của 1 máy. KHÔNG đồng bộ giữa
+  các thiết bị: sửa ở laptop thì điện thoại sẽ không thấy.
+• Mất dữ liệu nếu: xóa dữ liệu trình duyệt, dùng chế độ ẩn danh,
+  đổi sang trình duyệt/máy khác, hoặc đổi link repo.
+• PHÒNG XA: thỉnh thoảng bấm "⭳ Export" để tải file backup
+  (miatlas-places.json). Mất thì "⭱ Import" lại.
+• Muốn đồng bộ thật mọi thiết bị + có log chỉnh sửa → cần nâng
+  cấp lên cloud (Supabase) hoặc ghi qua GitHub API. Đây là bước
+  sau, không nằm trong giải pháp tạm này.
+
+
+RIÊNG TƯ
+--------
+• Repo "Public" = trang công khai, ai có link đều mở được (lời
+  nhắn/quote cá nhân sẽ hiển thị). Thường thì không ai đoán ra
+  link, nhưng nó KHÔNG bí mật.
+• Muốn kín hơn: để repo "Private" — nhưng GitHub Pages cho repo
+  private cần gói GitHub Pro. Hoặc đơn giản là gửi thẳng file
+  MiAtlas.html cho Thúy thay vì đăng link.
+
+------------------------------------------------------------
+Xong! Có link là mở mọi nơi. Khi nào muốn lên cloud thật,
+nhắn mình ráp tiếp. 🌏
+------------------------------------------------------------

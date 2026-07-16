@@ -71,6 +71,13 @@ What this means in plain words:
   your custom pins will NOT be there (you'll see the original 33 starter pins again).
 • To carry your map somewhere else, use EXPORT / IMPORT below.
 
+WANT REAL CROSS-DEVICE SYNC?
+There is now an optional Cloud Sync: link the app to your own
+(private) Google Sheet with the "☁ Sync" button, and your map
+follows you across phone and computer automatically. Full steps
+are in "MiAtlas-Sync-Huong-Dan.md" (Vietnamese). With sync on,
+your data is safe in your Sheet even if this browser is cleared.
+
 
 MOVING YOUR MAP TO ANOTHER COMPUTER (Export / Import)
 -----------------------------------------------------
